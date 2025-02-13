@@ -5,7 +5,7 @@ import redis.clients.jedis.Jedis;
 public class Main {
     public static void main(String[] args) {
 
-        try (Jedis jedis = RedisManager.getJedis()) { // Auto-close using try-with-resources
+        try (Jedis jedis = RedisManager.getJedis()) {
             System.out.println(jedis.get("testKey"));
         } catch (Exception e) {
             System.err.println("Redis error: " + e.getMessage());
