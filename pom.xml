@@ -18,8 +18,10 @@
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
-            <version>4.0.0</version>
+            <version>5.2.0</version>
+            <scope>compile</scope>
         </dependency>
+
         <dependency>
             <groupId>com.redislabs</groupId>
             <artifactId>jredisearch</artifactId>

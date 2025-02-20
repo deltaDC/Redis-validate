@@ -13,10 +13,12 @@ public class RediSearchValidate {
 
         Client client = new Client("myIndex", jedis);
 
-        Schema schema = new Schema().addTextField("title", 5.0).addTextField("content", 1.0);
+        Schema schema = new Schema()
+                .addTextField("title", 5.0)
+                .addTextField("content", 1.0);
 
-        client.createIndex(schema, null);
+        client.createIndex(schema, Client.IndexOptions.defaultOptions());
 
-        jedis.close();
+        System.out.println("Index created successfully!");
     }
 }
