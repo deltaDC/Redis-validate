@@ -3,6 +3,7 @@ package org.validate;
 import org.manager.RedisManager;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.Pipeline;
+import redis.clients.jedis.exceptions.JedisDataException;
 
 public class LuaScriptingValidate {
 
@@ -18,8 +19,60 @@ public class LuaScriptingValidate {
 //
 //        getKeysLargerThanThresholdLua(jedis);
 
-        compareSpeedOfNormalCommandVsPipelineVsLua(jedis);
+//        compareSpeedOfNormalCommandVsPipelineVsLua(jedis);
 
+//        luaRollback(jedis);
+
+        luaInterruption(jedis);
+
+    }
+
+    private static void luaInterruption(Jedis jedis) {
+
+        jedis.set("key1", "originalValue");
+
+        String luaScript =
+                "redis.call('SET', 'key1', 'newValue'); " +
+                "for i = 1, 5000000 do end; " +
+                "redis.call('SET', 'key2', 'finalValue'); " +
+                "return redis.call('GET', 'key2');";
+
+        new Thread(() -> {
+            try {
+                Thread.sleep(1000);
+                Jedis anotherClient = new Jedis("localhost", 6379);
+                System.out.println("Trying to get key1 while script is running...");
+                System.out.println("Value of key1: " + anotherClient.get("key1"));
+                anotherClient.close();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).start();
+
+        System.out.println("Executing Lua script...");
+        String result = (String) jedis.eval(luaScript);
+        System.out.println("Lua script completed. Result: " + result);
+
+        System.out.println("Final value of key1: " + jedis.get("key1"));
+    }
+
+    private static void luaRollback(Jedis jedis) {
+        jedis.flushAll();
+
+        String luaScript = "redis.call('SET', 'key1', 'value1'); " +
+                           "redis.call('INVALID_COMMAND'); " +
+                           "redis.call('SET', 'key2', 'value2'); " +
+                           "return 'Success'";
+
+        try {
+            String result = (String) jedis.eval(luaScript);
+            System.out.println("Lua script result: " + result);
+        } catch (JedisDataException e) {
+            System.out.println("Lua script failed: " + e.getMessage());
+        }
+
+        System.out.println("key1 exists? " + jedis.exists("key1")); //true -> so it does not rollback, still execute script above
+        System.out.println("key2 exists? " + jedis.exists("key2"));
     }
 
     private static void compareSpeedOfNormalCommandVsPipelineVsLua(Jedis jedis) {
