@@ -2,6 +2,7 @@ package org.validate;
 
 import org.manager.RedisManager;
 import redis.clients.jedis.Jedis;
+import redis.clients.jedis.Pipeline;
 
 public class LuaScriptingValidate {
 
@@ -9,14 +10,49 @@ public class LuaScriptingValidate {
 
         Jedis jedis = RedisManager.getJedis();
 
-        sumOfTwoIntLua(jedis);
+//        sumOfTwoIntLua(jedis);
+//
+//        checkKeyAndUpdateLua(jedis);
+//
+//        batchInsertLua(jedis);
+//
+//        getKeysLargerThanThresholdLua(jedis);
 
-        checkKeyAndUpdateLua(jedis);
+        compareSpeedOfNormalCommandVsPipelineVsLua(jedis);
 
-        batchInsertLua(jedis);
+    }
 
-        getKeysLargerThanThresholdLua(jedis);
+    private static void compareSpeedOfNormalCommandVsPipelineVsLua(Jedis jedis) {
+        String key = "benchmark_key";
+        int iterations = 1000;
 
+        jedis.set(key, "0");
+
+        long startNormal = System.nanoTime();
+        for (int i = 0; i < iterations; i++) {
+            jedis.incr(key);
+        }
+        long endNormal = System.nanoTime();
+        System.out.println("Normal Commands Time: " + (endNormal - startNormal) / 1e6 + " ms");
+
+        jedis.set(key, "0");
+
+        long startPipeline = System.nanoTime();
+        Pipeline pipeline = jedis.pipelined();
+        for (int i = 0; i < iterations; i++) {
+            pipeline.incr(key);
+        }
+        pipeline.sync();
+        long endPipeline = System.nanoTime();
+        System.out.println("Pipeline Time: " + (endPipeline - startPipeline) / 1e6 + " ms");
+
+        jedis.set(key, "0");
+
+        String luaScript = "for i=1," + iterations + " do redis.call('INCR', KEYS[1]) end";
+        long startLua = System.nanoTime();
+        jedis.eval(luaScript, 1, key);
+        long endLua = System.nanoTime();
+        System.out.println("Lua Script Time: " + (endLua - startLua) / 1e6 + " ms");
     }
 
     private static void getKeysLargerThanThresholdLua(Jedis jedis) {
