@@ -10,12 +10,21 @@ public class RedisManager {
 
     static {
         JedisPoolConfig poolConfig = new JedisPoolConfig();
-        poolConfig.setMaxTotal(10);
-        poolConfig.setMaxIdle(5);
-        poolConfig.setMinIdle(2);
-        poolConfig.setTestOnBorrow(true);
 
-        jedisPool = new JedisPool(poolConfig, "localhost", 6379);
+
+        poolConfig.setMaxTotal(10000);
+        poolConfig.setMaxIdle(50);
+        poolConfig.setMinIdle(10);
+
+        poolConfig.setTestOnBorrow(true);
+        poolConfig.setTestOnReturn(true);
+        poolConfig.setTestWhileIdle(true);
+
+        poolConfig.setTimeBetweenEvictionRunsMillis(30000);
+        poolConfig.setNumTestsPerEvictionRun(10);
+        poolConfig.setMinEvictableIdleTimeMillis(60000);
+
+        jedisPool = new JedisPool(poolConfig, "localhost", 6379, 5000);
     }
 
     public static Jedis getJedis() {
