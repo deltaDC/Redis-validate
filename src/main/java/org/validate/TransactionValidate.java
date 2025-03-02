@@ -67,12 +67,12 @@ public class TransactionValidate {
             List<Object> results = transaction.exec();
 
             if (results == null) {
-                System.out.println("Transaction aborted: The key was modified by another client.");
+                System.out.println("Transaction aborted");
             } else {
-                System.out.println("Transaction completed successfully: " + amountToDeduct + " deducted.");
+                System.out.println("Transaction completed");
             }
         } else {
-            System.out.println("Not enough balance to complete the transaction.");
+            System.out.println("Not enough balance");
         }
     }
 
